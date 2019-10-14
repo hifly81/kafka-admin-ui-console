@@ -10,8 +10,10 @@ import io.vertx.kafka.admin.KafkaAdminClient;
 import io.vertx.kafka.client.common.impl.Helper;
 import kafka.tools.TopicPartitionReplica;
 import org.apache.kafka.clients.admin.*;
-import org.apache.kafka.common.Node;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.requests.DescribeLogDirsResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,8 +68,15 @@ public class KafkaAdminServiceImpl implements KafkaAdminService {
     }
 
     @Override
-    public void listConsumerGroupOffsets​(String groupId, Handler<AsyncResult<ListConsumerGroupOffsetsResult>> resulthandler) {
-
+    public void listConsumerGroupOffsets​(String groupId, Handler<AsyncResult<Map<TopicPartition, OffsetAndMetadata>>> resulthandler) {
+        ListConsumerGroupOffsetsResult listConsumerGroupOffsetsResult = kafkaInternalAdminClient.listConsumerGroupOffsets(groupId);
+        listConsumerGroupOffsetsResult.partitionsToOffsetAndMetadata().whenComplete((partitions, ex)-> {
+            if(ex == null) {
+                resulthandler.handle(Future.succeededFuture(partitions));
+            } else {
+                resulthandler.handle(Future.failedFuture(ex));
+            }
+        });
     }
 
     @Override
@@ -82,8 +91,15 @@ public class KafkaAdminServiceImpl implements KafkaAdminService {
     }
 
     @Override
-    public void describeLogDirs​(Collection<Integer> brokers, Handler<AsyncResult<DescribeLogDirsResult>> resulthandler) {
-
+    public void describeLogDirs​(List<Integer> brokers, Handler<AsyncResult<Map<Integer, Map<String, DescribeLogDirsResponse.LogDirInfo>>>> resulthandler) {
+        DescribeLogDirsResult describeLogDirsResult = this.kafkaInternalAdminClient.describeLogDirs(brokers);
+        describeLogDirsResult.all().whenComplete((logs, ex) -> {
+            if(ex == null) {
+                resulthandler.handle(Future.succeededFuture(logs));
+            } else {
+                resulthandler.handle(Future.failedFuture(ex));
+            }
+        });
     }
 
     @Override

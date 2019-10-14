@@ -5,10 +5,11 @@ import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import kafka.tools.TopicPartitionReplica;
 import org.apache.kafka.clients.admin.*;
-import org.apache.kafka.common.Node;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.requests.DescribeLogDirsResponse;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,10 +18,10 @@ public interface KafkaAdminService {
 
     void listTopics(Handler<AsyncResult<Set<ConsoleTopic>>> resulthandler);
     void listConsumerGroups(Handler<AsyncResult<List<io.vertx.kafka.admin.ConsumerGroupListing>>> resulthandler);
-    void listConsumerGroupOffsets​(java.lang.String groupId, Handler<AsyncResult<ListConsumerGroupOffsetsResult>> resulthandler);
+    void listConsumerGroupOffsets​(java.lang.String groupId, Handler<AsyncResult<Map<TopicPartition, OffsetAndMetadata>>> resulthandler);
 
     void describeTopics​(List<String> topicNames, Handler<AsyncResult<Map<String, io.vertx.kafka.admin.TopicDescription>>> resulthandler);
-    void describeLogDirs​(java.util.Collection<java.lang.Integer> brokers, Handler<AsyncResult<DescribeLogDirsResult>> resulthandler);
+    void describeLogDirs​(List<Integer> brokers, Handler<AsyncResult<Map<Integer, Map<String, DescribeLogDirsResponse.LogDirInfo>>>> resulthandler);
     void describeConsumerGroups​(List<String> groupIds, Handler<AsyncResult<Map<String, io.vertx.kafka.admin.ConsumerGroupDescription>>> resulthandler);
     void describeCluster​(Handler<AsyncResult<Map<String,List>>> resulthandler);
 

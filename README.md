@@ -39,6 +39,9 @@ curl -X POST -H "Accept:application/json" -H "Content-Type:application/json" htt
 #Get consumer groups list
 curl -H "Accept:application/json" -H "Content-Type:application/json" http://localhost:8080/api/consumergroups
 
+#Get consumer group offset
+curl -H "Accept:application/json" -H "Content-Type:application/json" http://localhost:8080/api/consumergroups/:groupId/offset
+
 #Describe consumer groups
 curl -X POST -H "Accept:application/json" -H "Content-Type:application/json" http://localhost:8080/api/consumergroups/describe -d '{"groups": "group1,group2"}'
 
@@ -47,4 +50,7 @@ curl -X DELETE -H "Accept:application/json" -H "Content-Type:application/json" h
 
 #Describe cluster
 curl -H "Accept:application/json" -H "Content-Type:application/json" http://localhost:8080/api/cluster
+
+#Describe log dirs
+curl -X POST -H "Accept:application/json" -H "Content-Type:application/json" http://localhost:8080/api/logs/describe -d '{"brokers": "0,1,2"}'
 ```

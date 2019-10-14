@@ -19,6 +19,7 @@ import io.vertx.kafka.admin.NewTopic;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class RestVerticle extends AbstractVerticle {
 
@@ -72,10 +73,11 @@ public class RestVerticle extends AbstractVerticle {
         router.delete("/api/consumergroups").handler(this::deleteConsumerGroups);
         router.route("/api/consumergroups/describe").handler(BodyHandler.create());
         router.post("/api/consumergroups/describe").handler(this::consumerGroupsDescribe);
+        router.get("/api/consumergroups/:groupId/offset").handler(this::consumergroupOffset);
 
-        //TODO add method
-        //router.route("/api/partitions").handler(BodyHandler.create());
-        //router.post("/api/partitions").handler(this::createPartitions);
+        router.route("/api/logs/describe").handler(BodyHandler.create());
+        router.post("/api/logs/describe").handler(this::logsDescribe);
+
 
         vertx.createHttpServer()
                 .requestHandler(this.router)
@@ -199,11 +201,43 @@ public class RestVerticle extends AbstractVerticle {
 
     }
 
+    private void consumergroupOffset(RoutingContext routingContext) {
+        String groupId = routingContext.request().getParam("groupId");
+        kafkaAdminService.listConsumerGroupOffsets​(groupId, ar -> {
+            if (ar.succeeded()) {
+                routingContext.response()
+                        .putHeader("content-type", "application/json; charset=utf-8")
+                        .end(Json.encodePrettily(ar.result()));
+
+            } else {
+                handleErrorMessage(routingContext, ar);
+            }
+        });
+
+    }
+
     private void deleteConsumerGroups(RoutingContext routingContext) {
         JsonObject json = routingContext.getBodyAsJson();
         String groups = (String) json.getValue("groups");
         List<String> input = Arrays.asList(groups.split(","));
         kafkaAdminService.deleteConsumerGroups​(input, ar -> {
+            if (ar.succeeded()) {
+                routingContext.response()
+                        .putHeader("content-type", "application/json; charset=utf-8")
+                        .end(Json.encodePrettily(ar.result()));
+
+            } else {
+                handleErrorMessage(routingContext, ar);
+            }
+        });
+
+    }
+
+    private void logsDescribe(RoutingContext routingContext) {
+        JsonObject json = routingContext.getBodyAsJson();
+        String topics = (String) json.getValue("brokers");
+        List<String> input = Arrays.asList(topics.split(","));
+        kafkaAdminService.describeLogDirs​(input.stream().map(Integer::parseInt).collect(Collectors.toList()),ar -> {
             if (ar.succeeded()) {
                 routingContext.response()
                         .putHeader("content-type", "application/json; charset=utf-8")
