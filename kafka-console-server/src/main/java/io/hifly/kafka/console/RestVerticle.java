@@ -8,17 +8,17 @@ import io.vertx.config.ConfigStoreOptions;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.kafka.admin.NewTopic;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class RestVerticle extends AbstractVerticle {
@@ -57,6 +57,26 @@ public class RestVerticle extends AbstractVerticle {
         }
 
         router = Router.router(vertx);
+
+        //Enable cors
+        Set<String> allowedHeaders = new HashSet<>();
+        allowedHeaders.add("x-requested-with");
+        allowedHeaders.add("Access-Control-Allow-Origin");
+        allowedHeaders.add("origin");
+        allowedHeaders.add("Content-Type");
+        allowedHeaders.add("accept");
+
+        Set<HttpMethod> allowedMethods = new HashSet<>();
+        allowedMethods.add(HttpMethod.GET);
+        allowedMethods.add(HttpMethod.POST);
+        allowedMethods.add(HttpMethod.DELETE);
+        allowedMethods.add(HttpMethod.PATCH);
+        allowedMethods.add(HttpMethod.OPTIONS);
+        allowedMethods.add(HttpMethod.PUT);
+
+        router.route().handler(CorsHandler.create("*")
+                .allowedHeaders(allowedHeaders)
+                .allowedMethods(allowedMethods));
 
         router.get("/api/cluster").handler(this::cluster);
 

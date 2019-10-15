@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kafka Admin UI Console</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" media="all" href="https://s3.amazonaws.com/dynatable-docs-assets/css/reset.css" />
+    <link rel="stylesheet" media="all" href="https://s3.amazonaws.com/dynatable-docs-assets/css/bootstrap-2.3.2.min.css" />
+    <link rel="stylesheet" media="all" href="https://s3.amazonaws.com/dynatable-docs-assets/css/application.css" />
+    <link rel="stylesheet" media="all" href="https://s3.amazonaws.com/dynatable-docs-assets/css/project.css" />
+    <link rel="stylesheet" media="all" href="https://s3.amazonaws.com/dynatable-docs-assets/css/pygments.css" />
+    <link rel="stylesheet" media="all" href="https://s3.amazonaws.com/dynatable-docs-assets/css/share.css" />
+    <link rel="stylesheet" media="all" href="https://s3.amazonaws.com/dynatable-docs-assets/css/dynatable-docs.css" />
+    <script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery-1.9.1.min.js'></script>
+    <script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery.scrollTo.js'></script>
+    <script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery.toc.min.js'></script>
+    <script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery.sharrre-1.2.0.min.js'></script>
+    <link rel="stylesheet" media="all" href="https://s3.amazonaws.com/dynatable-docs-assets/css/jquery.dynatable.css" />
+    <script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery.dynatable.js'></script>
+    <script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/highcharts.js'></script>
+</head>
+
+<body>
+<h1>Topics</h1>
+<div class="row-fluid">
+<div class="span6">
+<table class="table table-bordered" id="topics-table">
+  <thead>
+    <th>Name</th>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
+</div>
+</div>
+<hr/>
+
+<h1>Consumer Groups</h1>
+<div class="row-fluid">
+<div class="span6">
+<table class="table table-bordered" id="cgroups-table">
+  <thead>
+    <th>Group Id</th>
+    <th>Simple?</th>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
+</div>
+</div>
+
+
+
+<script>
+
+$.ajax({
+  url: 'http://localhost:8080/api/topics',
+  success: function(data){
+    $('#topics-table').dynatable({
+      dataset: {
+        records: data
+      }
+    });
+  }
+});
+
+$.ajax({
+  url: 'http://localhost:8080/api/consumergroups',
+  success: function(data){
+    $('#cgroups-table').dynatable({
+      dataset: {
+        records: data
+      }
+    });
+  }
+});
+</script>
+
+
+
+
+</body>
+</html>

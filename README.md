@@ -6,6 +6,8 @@ Kafka Console is a UI for Apache Kafka admin operations.
 
 WIP (help wanted!)
 
+First version is using jquery and dynatable
+
 ## Run Kafka Console Server
 
 Compile the project:
