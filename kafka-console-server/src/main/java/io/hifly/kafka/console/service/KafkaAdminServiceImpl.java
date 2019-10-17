@@ -113,6 +113,24 @@ public class KafkaAdminServiceImpl implements KafkaAdminService {
         });
     }
 
+    public void describeController(Handler<AsyncResult<List<ControllerNode>>> resulthandler) {
+        DescribeClusterResult describeClusterResult = this.kafkaInternalAdminClient.describeCluster();
+        final ControllerNode controllerNode = new ControllerNode();
+        describeClusterResult.controller().whenComplete((controller, ex) -> {
+            if(ex == null) {
+                controllerNode.setHost(controller.host());
+                controllerNode.setId(controller.id());
+                controllerNode.setPort(controller.port());
+                controllerNode.setHasRack(controller.hasRack());
+                controllerNode.setRack(controller.rack());
+                resulthandler.handle(Future.succeededFuture(Arrays.asList(controllerNode)));
+
+            } else {
+                resulthandler.handle(Future.failedFuture(ex));
+            }
+        });
+    }
+
     @Override
     public void describeCluster​(Handler<AsyncResult<Map<String,List>>> resulthandler) {
         DescribeClusterResult describeClusterResult = this.kafkaInternalAdminClient.describeCluster();

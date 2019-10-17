@@ -79,6 +79,7 @@ public class RestVerticle extends AbstractVerticle {
                 .allowedMethods(allowedMethods));
 
         router.get("/api/cluster").handler(this::cluster);
+        router.get("/api/controller").handler(this::controller);
 
         router.get("/api/topics").handler(this::topics);
         router.route("/api/topics").handler(BodyHandler.create());
@@ -112,6 +113,19 @@ public class RestVerticle extends AbstractVerticle {
 
     private void cluster(RoutingContext routingContext) {
         kafkaAdminService.describeCluster​(ar -> {
+            if (ar.succeeded()) {
+                routingContext.response()
+                        .putHeader("content-type", "application/json; charset=utf-8")
+                        .end(Json.encodePrettily(ar.result()));
+
+            } else {
+                handleErrorMessage(routingContext, ar);
+            }
+        });
+    }
+
+    private void controller(RoutingContext routingContext) {
+        kafkaAdminService.describeController(ar -> {
             if (ar.succeeded()) {
                 routingContext.response()
                         .putHeader("content-type", "application/json; charset=utf-8")

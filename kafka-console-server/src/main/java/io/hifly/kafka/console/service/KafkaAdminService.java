@@ -1,6 +1,7 @@
 package io.hifly.kafka.console.service;
 
 import io.hifly.kafka.console.model.ConsoleTopic;
+import io.hifly.kafka.console.model.ControllerNode;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import kafka.tools.TopicPartitionReplica;
@@ -24,6 +25,7 @@ public interface KafkaAdminService {
     void describeLogDirs​(List<Integer> brokers, Handler<AsyncResult<Map<Integer, Map<String, DescribeLogDirsResponse.LogDirInfo>>>> resulthandler);
     void describeConsumerGroups​(List<String> groupIds, Handler<AsyncResult<Map<String, io.vertx.kafka.admin.ConsumerGroupDescription>>> resulthandler);
     void describeCluster​(Handler<AsyncResult<Map<String,List>>> resulthandler);
+    void describeController(Handler<AsyncResult<List<ControllerNode>>> resulthandler);
 
     void deleteTopics​(List<String> topics, Handler<AsyncResult<Void>> resulthandler);
     void deleteConsumerGroups​(java.util.Collection<java.lang.String> groupIds, Handler<AsyncResult<Void>> resulthandler);
