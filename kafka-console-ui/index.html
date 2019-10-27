@@ -13,19 +13,67 @@
     <link rel="stylesheet" media="all" href="https://s3.amazonaws.com/dynatable-docs-assets/css/jquery.dynatable.css" />
     <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="css/dialog-ui.css">
+    <link rel="stylesheet" href="css/main.css">
+
     <script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery-1.9.1.min.js'></script>
     <script type='text/javascript' src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery.scrollTo.js'></script>
     <script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery.toc.min.js'></script>
     <script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery.sharrre-1.2.0.min.js'></script>
     <script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery.dynatable.js'></script>
-    <script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/highcharts.js'></script>
 </head>
 
 <body>
+  <header>
+    <button class="hamburger">&#9776;</button>
+    <button class="cross">&#735;</button>
+  </header>
+  <div class="menu">
+  <ul>
+    <a href="#"><li>Cluster</li></a>
+  </ul>
+  <ul>
+    <a href="#"><li>Broker</li></a>
+  </ul>
+  <ul>
+    <a href="#"><li>Topic</li></a>
+  </ul>
+</div>
 
+<article>
 <div id="dialog-new-topic" title="Create new Topics">
- <p id="new-topic-def">TODO</p>
+ <p id="new-topic-def">
+   <form>
+     <table id="new-topic-form">
+       <tbody>
+       <tr>
+         <td>
+           Name
+         </td>
+         <td>
+           <input id="new-topic-form-name" type="text" name="name">
+         </td>
+       </tr>
+       <tr>
+         <td>
+           Partition Number
+         </td>
+         <td>
+           <input id="new-topic-form-partition" type="number" name="partition">
+         </td>
+       </tr>
+       <tr>
+         <td>
+           Replication Factor
+         </td>
+         <td>
+           <input id="new-topic-form-replication" type="number" name="repfactor">
+         </td>
+       </tr>
+     </tbody>
+     </table>
+   </form>
+ </p>
 </div>
 
 <h1>Controller</h1>
@@ -74,16 +122,15 @@
 <table class="table table-bordered" id="topics-table">
   <thead>
     <th>Name</th>
+    <th>Operations</th>
   </thead>
   <tbody>
   </tbody>
 </table>
 </div>
 </div>
-<div>
-  <a id="new-topic" href="#">Create new topics</a>
 </div>
-
+ <a id="new-topic" href="#">Create new topics</a>
 <hr/>
 
 <h1>Consumer Groups</h1>
@@ -95,6 +142,7 @@
   <thead>
     <th>Group Id</th>
     <th>Simple?</th>
+    <th>Operations</th>
   </thead>
   <tbody>
   </tbody>
@@ -102,7 +150,25 @@
 </div>
 </div>
 
+</article>
+
 <script>
+
+var handle200 = function(data, textStatus, jqXHR) {
+    alert('200');
+}
+
+var handle201 = function(data, textStatus, jqXHR) {
+    alert('Topic created!');
+}
+
+var handle404 = function(jqXHR, textStatus, errorThrown) {
+    alert('Page not found');
+}
+
+var handle500 = function(jqXHR, textStatus, errorThrown) {
+    alert('Error:' + textStatus);
+}
 
 //div toggle
 $('#cdiv').hide();
@@ -122,6 +188,18 @@ $('a#cgdivtrigger').click(function () {
   $('#cgdiv').toggle(400);
 });
 
+//hamburger menu
+$(".hamburger").click(function() {
+  $(this).hide();
+  $('.cross').show();
+  $(".menu").slideToggle();
+});
+$(".cross").click(function() {
+  $(this).hide();
+  $('.hamburger').show();
+  $(".menu").slideToggle();
+});
+
 $('#dialog-new-topic').dialog({
       modal: true,
       autoOpen: false,
@@ -129,8 +207,8 @@ $('#dialog-new-topic').dialog({
       open: function(event, ui) {
         $(".ui-dialog-titlebar-close", ui.dialog || ui).hide();
       },
-      width: 400,
-      height: 300,
+      width: 350,
+      height: 250,
       open: function() {
             jQuery('.ui-widget-overlay').on('click', function() {
                 jQuery('#dialog-new-topic').dialog('close');
@@ -138,6 +216,23 @@ $('#dialog-new-topic').dialog({
       },
       buttons: {
         Ok: function() {
+          var topicName = $('#new-topic-form-name').val();
+          var topicPartition = $('#new-topic-form-partition').val();
+          var topicRep = $('#new-topic-form-replication').val();
+
+          $.ajax({
+            type: "PUT",
+            url: 'http://localhost:8080/api/topics',
+            data: '{"topics": [{"name":"' + topicName + '","numPartitions": ' + topicPartition + ',"replicationFactor": ' + topicRep + '}]}',
+            dataType: "json",
+            statusCode: {
+              200: handle200,
+              201: handle201,
+              404: handle404,
+              500: handle500
+            }
+          });
+
           $( this ).dialog( "close" );
         }
       },
@@ -162,10 +257,6 @@ $.ajax({
   url: 'http://localhost:8080/api/controller',
   success: function(data){
     var row = "";
-    //$('#controller-table').dynatable({
-      //dataset: {
-        //records: data
-      //}
       $.each(data, function (index, value) {
         //console.log(value);
         row += "<tr><td>" + value.id + "</td><td>" + value.host + "</td><td>" + value.port + "</td><td>" + value.hasRack + "</td><td>" + value.rack + "</td></tr>";});
@@ -177,33 +268,39 @@ $.ajax({
 $.ajax({
   url: 'http://localhost:8080/api/broker',
   success: function(data){
-    $('#brokers-table').dynatable({
-      dataset: {
-        records: data
-      }
-    });
+    var row = "";
+      $.each(data, function (index, value) {
+        //console.log(value);
+        row += "<tr><td>" + value.id + "</td><td>" + value.host + "</td><td>" + value.port + "</td></tr>";});
+
+      $("#brokers-table tbody").append(row);
+
   }
 });
 
 $.ajax({
   url: 'http://localhost:8080/api/topics',
   success: function(data){
-    $('#topics-table').dynatable({
-      dataset: {
-        records: data
-      }
-    });
+    var row = "";
+      $.each(data, function (index, value) {
+        //console.log(value);
+        row += "<tr><td>" + value.name + "</td><td><a href='#'>delete</a></td></tr>";});
+
+      $("#topics-table tbody").append(row);
+
   }
 });
 
 $.ajax({
   url: 'http://localhost:8080/api/consumergroups',
   success: function(data){
-    $('#cgroups-table').dynatable({
-      dataset: {
-        records: data
-      }
-    });
+    var row = "";
+    $.each(data, function (index, value) {
+      //console.log(value);
+      row += "<tr><td>" + value.groupId + "</td><td>" + value.simpleConsumerGroup + "</td><td><a href='#'>delete</a></td></tr>";});
+
+    $("#cgroups-table tbody").append(row);
+
   }
 });
 </script>
