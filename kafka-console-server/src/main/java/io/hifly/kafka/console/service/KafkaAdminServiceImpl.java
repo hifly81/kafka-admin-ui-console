@@ -11,6 +11,7 @@ import io.vertx.kafka.client.common.impl.Helper;
 import kafka.tools.TopicPartitionReplica;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.requests.DescribeLogDirsResponse;
@@ -124,6 +125,19 @@ public class KafkaAdminServiceImpl implements KafkaAdminService {
                 controllerNode.setHasRack(controller.hasRack());
                 controllerNode.setRack(controller.rack());
                 resulthandler.handle(Future.succeededFuture(Arrays.asList(controllerNode)));
+
+            } else {
+                resulthandler.handle(Future.failedFuture(ex));
+            }
+        });
+    }
+
+    public void describeBroker(Handler<AsyncResult<List>> resulthandler) {
+        DescribeClusterResult describeClusterResult = this.kafkaInternalAdminClient.describeCluster();
+        describeClusterResult.nodes().whenComplete((nodes, ex) -> {
+            if(ex == null) {
+                List nodesList = nodes.stream().map(Helper::from).collect(Collectors.toList());
+                resulthandler.handle(Future.succeededFuture(nodesList));
 
             } else {
                 resulthandler.handle(Future.failedFuture(ex));

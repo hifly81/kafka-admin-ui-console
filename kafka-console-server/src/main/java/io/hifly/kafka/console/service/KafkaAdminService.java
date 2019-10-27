@@ -7,10 +7,12 @@ import io.vertx.core.Handler;
 import kafka.tools.TopicPartitionReplica;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.requests.DescribeLogDirsResponse;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,6 +28,7 @@ public interface KafkaAdminService {
     void describeConsumerGroups​(List<String> groupIds, Handler<AsyncResult<Map<String, io.vertx.kafka.admin.ConsumerGroupDescription>>> resulthandler);
     void describeCluster​(Handler<AsyncResult<Map<String,List>>> resulthandler);
     void describeController(Handler<AsyncResult<List<ControllerNode>>> resulthandler);
+    void describeBroker(Handler<AsyncResult<List>> resulthandler);
 
     void deleteTopics​(List<String> topics, Handler<AsyncResult<Void>> resulthandler);
     void deleteConsumerGroups​(java.util.Collection<java.lang.String> groupIds, Handler<AsyncResult<Void>> resulthandler);

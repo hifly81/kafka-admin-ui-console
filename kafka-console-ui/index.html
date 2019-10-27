@@ -11,7 +11,10 @@
     <link rel="stylesheet" media="all" href="https://s3.amazonaws.com/dynatable-docs-assets/css/share.css" />
     <link rel="stylesheet" media="all" href="https://s3.amazonaws.com/dynatable-docs-assets/css/dynatable-docs.css" />
     <link rel="stylesheet" media="all" href="https://s3.amazonaws.com/dynatable-docs-assets/css/jquery.dynatable.css" />
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="css/dialog-ui.css">
     <script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery-1.9.1.min.js'></script>
+    <script type='text/javascript' src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery.scrollTo.js'></script>
     <script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery.toc.min.js'></script>
     <script type='text/javascript' src='https://s3.amazonaws.com/dynatable-docs-assets/js/jquery.sharrre-1.2.0.min.js'></script>
@@ -20,9 +23,15 @@
 </head>
 
 <body>
+
+<div id="dialog-new-topic" title="Create new Topics">
+ <p id="new-topic-def">TODO</p>
+</div>
+
 <h1>Controller</h1>
 <div class="row-fluid">
-<div class="span6">
+<a id="cdivtrigger" href="#">show/hide</a>
+<div id="cdiv" class="span6">
 <table class="table table-bordered" id="controller-table">
   <thead>
     <th>Id</th>
@@ -39,9 +48,28 @@
 
 <hr/>
 
-<body>
+<h1>Brokers</h1>
+<div class="row-fluid">
+<a id="bdivtrigger" href="#">show/hide</a>
+<div id="bdiv" class="span6">
+<table class="table table-bordered" id="brokers-table">
+  <thead>
+    <th>Id</th>
+    <th>Host</th>
+    <th>Port</th>
+  </thead>
+  <tbody>
+  </tbody>
+</table>
+</div>
+</div>
+
+<hr/>
+
 <h1>Topics</h1>
 <div class="row-fluid">
+<a id="tdivtrigger" href="#">show/hide</a>
+<div id="tdiv" class="span6">
 <div class="span6">
 <table class="table table-bordered" id="topics-table">
   <thead>
@@ -52,11 +80,16 @@
 </table>
 </div>
 </div>
+<div>
+  <a id="new-topic" href="#">Create new topics</a>
+</div>
 
 <hr/>
 
 <h1>Consumer Groups</h1>
 <div class="row-fluid">
+<a id="cgdivtrigger" href="#">show/hide</a>
+<div id="cgdiv" class="span6">
 <div class="span6">
 <table class="table table-bordered" id="cgroups-table">
   <thead>
@@ -71,10 +104,80 @@
 
 <script>
 
+//div toggle
+$('#cdiv').hide();
+$('#bdiv').hide();
+$('#tdiv').hide();
+$('#cgdiv').hide();
+$('a#cdivtrigger').click(function () {
+  $('#cdiv').toggle(400);
+});
+$('a#bdivtrigger').click(function () {
+  $('#bdiv').toggle(400);
+});
+$('a#tdivtrigger').click(function () {
+  $('#tdiv').toggle(400);
+});
+$('a#cgdivtrigger').click(function () {
+  $('#cgdiv').toggle(400);
+});
+
+$('#dialog-new-topic').dialog({
+      modal: true,
+      autoOpen: false,
+      closeOnEscape: false,
+      open: function(event, ui) {
+        $(".ui-dialog-titlebar-close", ui.dialog || ui).hide();
+      },
+      width: 400,
+      height: 300,
+      open: function() {
+            jQuery('.ui-widget-overlay').on('click', function() {
+                jQuery('#dialog-new-topic').dialog('close');
+            })
+      },
+      buttons: {
+        Ok: function() {
+          $( this ).dialog( "close" );
+        }
+      },
+      show: {
+        effect: "bounce",
+        duration: 1000
+      },
+      hide: {
+        effect: "fade",
+        duration: 1000
+      }
+});
+
+$('#new-topic').click( function(e) {
+  e.preventDefault();
+  $('#dialog-new-topic').dialog("open");
+  //$('#new-topic-def').html("Ciao mondo");
+  return false;
+});
+
 $.ajax({
   url: 'http://localhost:8080/api/controller',
   success: function(data){
-    $('#controller-table').dynatable({
+    var row = "";
+    //$('#controller-table').dynatable({
+      //dataset: {
+        //records: data
+      //}
+      $.each(data, function (index, value) {
+        //console.log(value);
+        row += "<tr><td>" + value.id + "</td><td>" + value.host + "</td><td>" + value.port + "</td><td>" + value.hasRack + "</td><td>" + value.rack + "</td></tr>";});
+
+      $("#controller-table tbody").append(row);
+  }
+});
+
+$.ajax({
+  url: 'http://localhost:8080/api/broker',
+  success: function(data){
+    $('#brokers-table').dynatable({
       dataset: {
         records: data
       }
