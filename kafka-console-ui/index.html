@@ -41,6 +41,15 @@
 </div>
 
 <article>
+
+<div id="dialog-delete-topic" title="Delete Topic">
+  <p id="delete-topic-def">Are you sure you want to delete the topic: <span id="delete-topic-name"></span></p>
+</div>
+
+<div id="dialog-delete-cgroup" title="Delete Consumer Group">
+  <p id="delete-cgroup-def">Are you sure you want to delete the consumer group: <span id="delete-cgroup-name"></span></p>
+</div>
+
 <div id="dialog-new-topic" title="Create new Topics">
  <p id="new-topic-def">
    <form>
@@ -158,8 +167,55 @@ var handle200 = function(data, textStatus, jqXHR) {
     alert('200');
 }
 
-var handle201 = function(data, textStatus, jqXHR) {
-    alert('Topic created!');
+var handleTopicCreated = function(data, textStatus, jqXHR) {
+    alert('Element created!');
+    $("#topics-table tbody").html("");
+    $.ajax({
+      url: 'http://localhost:8080/api/topics',
+      success: function(data){
+        var row = "";
+          $.each(data, function (index, value) {
+            //console.log(value);
+            row += "<tr><td>" + value.name + "</td><td><a href='#' onclick='deleteTopic(\"" + value.name + "\");'>delete</a></td></tr>";});
+
+          $("#topics-table tbody").append(row);
+
+      }
+    });
+}
+
+var handleTopicDeleted = function(data, textStatus, jqXHR) {
+    alert('Element deleted!');
+    $("#topics-table tbody").html("");
+    $.ajax({
+      url: 'http://localhost:8080/api/topics',
+      success: function(data){
+        var row = "";
+          $.each(data, function (index, value) {
+            //console.log(value);
+            row += "<tr><td>" + value.name + "</td><td><a href='#' onclick='deleteTopic(\"" + value.name + "\");'>delete</a></td></tr>";});
+
+          $("#topics-table tbody").append(row);
+
+      }
+    });
+}
+
+var handleCgroupDeleted = function(data, textStatus, jqXHR) {
+    alert('Element deleted!');
+    $("#cgroups-table tbody").html("");
+    $.ajax({
+      url: 'http://localhost:8080/api/consumergroups',
+      success: function(data){
+        var row = "";
+        $.each(data, function (index, value) {
+          //console.log(value);
+          row += "<tr><td>" + value.groupId + "</td><td>" + value.simpleConsumerGroup + "</td><td><a href='#' onclick='deleteCgroup(\"" + value.groupId + "\");'>delete</a></td></tr>";});
+
+        $("#cgroups-table tbody").append(row);
+
+      }
+    });
 }
 
 var handle404 = function(jqXHR, textStatus, errorThrown) {
@@ -200,6 +256,54 @@ $(".cross").click(function() {
   $(".menu").slideToggle();
 });
 
+$('#dialog-delete-topic').dialog({
+      modal: true,
+      autoOpen: false,
+      closeOnEscape: false,
+      open: function(event, ui) {
+        $(".ui-dialog-titlebar-close", ui.dialog || ui).hide();
+      },
+      width: 350,
+      height: 250,
+      open: function() {
+            jQuery('.ui-widget-overlay').on('click', function() {
+                jQuery('#dialog-delete-topic').dialog('close');
+            })
+      },
+      buttons: {
+        Ok: function() {
+          var topicName = $('#delete-topic-name').html();
+
+          $.ajax({
+            type: "DELETE",
+            url: 'http://localhost:8080/api/topics',
+            data: '{"topics": "' + topicName + '"}',
+            dataType: "json",
+            statusCode: {
+              200: handle200,
+              202: handleTopicDeleted,
+              404: handle404,
+              500: handle500
+            }
+          });
+
+          $( this ).dialog( "close" );
+        },
+        Cancel: function() {
+          $( this ).dialog( "close" );
+        }
+      },
+      show: {
+        effect: "bounce",
+        duration: 1000
+      },
+      hide: {
+        effect: "fade",
+        duration: 1000
+      }
+});
+
+
 $('#dialog-new-topic').dialog({
       modal: true,
       autoOpen: false,
@@ -227,12 +331,61 @@ $('#dialog-new-topic').dialog({
             dataType: "json",
             statusCode: {
               200: handle200,
-              201: handle201,
+              201: handleTopicCreated,
               404: handle404,
               500: handle500
             }
           });
 
+          $( this ).dialog( "close" );
+        },
+        Cancel: function() {
+          $( this ).dialog( "close" );
+        }
+      },
+      show: {
+        effect: "bounce",
+        duration: 1000
+      },
+      hide: {
+        effect: "fade",
+        duration: 1000
+      }
+});
+
+$('#dialog-delete-cgroup').dialog({
+      modal: true,
+      autoOpen: false,
+      closeOnEscape: false,
+      open: function(event, ui) {
+        $(".ui-dialog-titlebar-close", ui.dialog || ui).hide();
+      },
+      width: 350,
+      height: 250,
+      open: function() {
+            jQuery('.ui-widget-overlay').on('click', function() {
+                jQuery('#dialog-delete-cgroup').dialog('close');
+            })
+      },
+      buttons: {
+        Ok: function() {
+          var cgroup = $('#delete-cgroup-name').html();
+
+          $.ajax({
+            type: "DELETE",
+            url: 'http://localhost:8080/api/consumergroups',
+            data: '{"groups": "' + cgroup + '"}',
+            dataType: "json",
+            statusCode: {
+              200: handleCgroupDeleted,
+              404: handle404,
+              500: handle500
+            }
+          });
+
+          $( this ).dialog( "close" );
+        },
+        Cancel: function() {
           $( this ).dialog( "close" );
         }
       },
@@ -252,6 +405,18 @@ $('#new-topic').click( function(e) {
   //$('#new-topic-def').html("Ciao mondo");
   return false;
 });
+
+function deleteTopic(topicName) {
+  $('#dialog-delete-topic').dialog("open");
+  $('#delete-topic-name').html(topicName);
+  return false;
+}
+
+function deleteCgroup(cgroup) {
+  $('#dialog-delete-cgroup').dialog("open");
+  $('#delete-cgroup-name').html(cgroup);
+  return false;
+}
 
 $.ajax({
   url: 'http://localhost:8080/api/controller',
@@ -284,7 +449,7 @@ $.ajax({
     var row = "";
       $.each(data, function (index, value) {
         //console.log(value);
-        row += "<tr><td>" + value.name + "</td><td><a href='#'>delete</a></td></tr>";});
+        row += "<tr><td>" + value.name + "</td><td><a href='#' onclick='deleteTopic(\"" + value.name + "\");'>delete</a></td></tr>";});
 
       $("#topics-table tbody").append(row);
 
@@ -297,7 +462,7 @@ $.ajax({
     var row = "";
     $.each(data, function (index, value) {
       //console.log(value);
-      row += "<tr><td>" + value.groupId + "</td><td>" + value.simpleConsumerGroup + "</td><td><a href='#'>delete</a></td></tr>";});
+      row += "<tr><td>" + value.groupId + "</td><td>" + value.simpleConsumerGroup + "</td><td><a href='#' onclick='deleteCgroup(\"" + value.groupId + "\");'>delete</a></td></tr>";});
 
     $("#cgroups-table tbody").append(row);
 
