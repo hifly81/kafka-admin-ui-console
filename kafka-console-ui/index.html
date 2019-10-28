@@ -42,6 +42,10 @@
 
 <article>
 
+<div id="dialog-describe-topic" title="Describe Topic">
+    <p id="describe-topic-def"><span id="describe-topic-name"></span></p>
+</div>
+
 <div id="dialog-delete-topic" title="Delete Topic">
   <p id="delete-topic-def">Are you sure you want to delete the topic: <span id="delete-topic-name"></span></p>
 </div>
@@ -170,35 +174,13 @@ var handle200 = function(data, textStatus, jqXHR) {
 var handleTopicCreated = function(data, textStatus, jqXHR) {
     alert('Element created!');
     $("#topics-table tbody").html("");
-    $.ajax({
-      url: 'http://localhost:8080/api/topics',
-      success: function(data){
-        var row = "";
-          $.each(data, function (index, value) {
-            //console.log(value);
-            row += "<tr><td>" + value.name + "</td><td><a href='#' onclick='deleteTopic(\"" + value.name + "\");'>delete</a></td></tr>";});
-
-          $("#topics-table tbody").append(row);
-
-      }
-    });
+    loadTopics();
 }
 
 var handleTopicDeleted = function(data, textStatus, jqXHR) {
     alert('Element deleted!');
     $("#topics-table tbody").html("");
-    $.ajax({
-      url: 'http://localhost:8080/api/topics',
-      success: function(data){
-        var row = "";
-          $.each(data, function (index, value) {
-            //console.log(value);
-            row += "<tr><td>" + value.name + "</td><td><a href='#' onclick='deleteTopic(\"" + value.name + "\");'>delete</a></td></tr>";});
-
-          $("#topics-table tbody").append(row);
-
-      }
-    });
+    loadTopics();
 }
 
 var handleCgroupDeleted = function(data, textStatus, jqXHR) {
@@ -216,6 +198,28 @@ var handleCgroupDeleted = function(data, textStatus, jqXHR) {
 
       }
     });
+}
+
+var handleDescribeTopics = function(data, textStatus, jqXHR) {
+  var topicName = $('#describe-topic-name').html();
+  $('#describe-topic-name').html("");
+  $('#describe-topic-name').html("Topic Name:" + data[topicName].name + "<br>Number of partitions:" + data[topicName].partitions.length);
+  $('#describe-topic-name').append("<br>Partitions:<br>");
+  var lastText = $('#describe-topic-name').html();
+  for (var i = 0; i < data[topicName].partitions.length; i++) {
+    $('#describe-topic-name').append("&nbsp;&nbsp;" + i + " - Leader: - Id:" + data[topicName].partitions[i].leader.id + " - Hostname:" + data[topicName].partitions[i].leader.host + ":" + data[topicName].partitions[i].leader.port);
+    $('#describe-topic-name').append("<br>");
+    $('#describe-topic-name').append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Replicas:");
+    for (var j = 0; j < data[topicName].partitions[i].isr.length; j++) {
+      $('#describe-topic-name').append(data[topicName].partitions[i].replicas[j].id + ",");
+    }
+    $('#describe-topic-name').append("<br>");
+    $('#describe-topic-name').append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Isr:");
+    for (var j = 0; j < data[topicName].partitions[i].replicas.length; j++) {
+      $('#describe-topic-name').append(data[topicName].partitions[i].isr[j].id + ",");
+    }
+    $('#describe-topic-name').append("<br>");
+  }
 }
 
 var handle404 = function(jqXHR, textStatus, errorThrown) {
@@ -353,6 +357,35 @@ $('#dialog-new-topic').dialog({
       }
 });
 
+$('#dialog-describe-topic').dialog({
+      modal: true,
+      autoOpen: false,
+      closeOnEscape: false,
+      open: function(event, ui) {
+        $(".ui-dialog-titlebar-close", ui.dialog || ui).hide();
+      },
+      width: 350,
+      height: 250,
+      open: function() {
+            jQuery('.ui-widget-overlay').on('click', function() {
+                jQuery('#dialog-describe-topic').dialog('close');
+            })
+      },
+      buttons: {
+        Ok: function() {
+          $( this ).dialog( "close" );
+        }
+      },
+      show: {
+        effect: "bounce",
+        duration: 1000
+      },
+      hide: {
+        effect: "fade",
+        duration: 1000
+      }
+});
+
 $('#dialog-delete-cgroup').dialog({
       modal: true,
       autoOpen: false,
@@ -406,9 +439,41 @@ $('#new-topic').click( function(e) {
   return false;
 });
 
+function loadTopics() {
+  $.ajax({
+    url: 'http://localhost:8080/api/topics',
+    success: function(data){
+      var row = "";
+        $.each(data, function (index, value) {
+          //console.log(value);
+          row += "<tr><td>" + value.name + "</td><td><a href='#' onclick='describeTopic(\"" + value.name + "\");'>describe</a>&nbsp;<a href='#' onclick='deleteTopic(\"" + value.name + "\");'>delete</a></td></tr>";});
+
+        $("#topics-table tbody").append(row);
+    }
+  });
+}
+
 function deleteTopic(topicName) {
   $('#dialog-delete-topic').dialog("open");
   $('#delete-topic-name').html(topicName);
+  return false;
+}
+
+function describeTopic(topicName) {
+  $('#dialog-describe-topic').dialog("open");
+  $('#describe-topic-name').html(topicName);
+  $.ajax({
+    type: "POST",
+    url: 'http://localhost:8080/api/topics/describe',
+    data: '{"topics": "' + topicName + '"}',
+    dataType: "json",
+    statusCode: {
+      200: handleDescribeTopics,
+      404: handle404,
+      500: handle500
+    }
+  });
+
   return false;
 }
 
@@ -443,18 +508,7 @@ $.ajax({
   }
 });
 
-$.ajax({
-  url: 'http://localhost:8080/api/topics',
-  success: function(data){
-    var row = "";
-      $.each(data, function (index, value) {
-        //console.log(value);
-        row += "<tr><td>" + value.name + "</td><td><a href='#' onclick='deleteTopic(\"" + value.name + "\");'>delete</a></td></tr>";});
-
-      $("#topics-table tbody").append(row);
-
-  }
-});
+loadTopics();
 
 $.ajax({
   url: 'http://localhost:8080/api/consumergroups',
