@@ -46,6 +46,10 @@
     <p id="describe-topic-def"><span id="describe-topic-name"></span></p>
 </div>
 
+<div id="dialog-describe-logdir" title="Describe Log Dir">
+    <p id="describe-logdir-def"><span id="describe-broker-id"></span></p>
+</div>
+
 <div id="dialog-delete-topic" title="Delete Topic">
   <p id="delete-topic-def">Are you sure you want to delete the topic: <span id="delete-topic-name"></span></p>
 </div>
@@ -118,6 +122,7 @@
     <th>Id</th>
     <th>Host</th>
     <th>Port</th>
+    <th>Operations</th>
   </thead>
   <tbody>
   </tbody>
@@ -203,23 +208,48 @@ var handleCgroupDeleted = function(data, textStatus, jqXHR) {
 var handleDescribeTopics = function(data, textStatus, jqXHR) {
   var topicName = $('#describe-topic-name').html();
   $('#describe-topic-name').html("");
-  $('#describe-topic-name').html("Topic Name:" + data[topicName].name + "<br>Number of partitions:" + data[topicName].partitions.length);
-  $('#describe-topic-name').append("<br>Partitions:<br>");
+  $('#describe-topic-name').html("<b>Topic Name:</b>" + data[topicName].name + "<br><b>Number of partitions:</b>" + data[topicName].partitions.length);
+  $('#describe-topic-name').append("<br><b>Partitions:</b><br>");
   var lastText = $('#describe-topic-name').html();
   for (var i = 0; i < data[topicName].partitions.length; i++) {
-    $('#describe-topic-name').append("&nbsp;&nbsp;" + i + " - Leader: - Id:" + data[topicName].partitions[i].leader.id + " - Hostname:" + data[topicName].partitions[i].leader.host + ":" + data[topicName].partitions[i].leader.port);
+    $('#describe-topic-name').append("&nbsp;&nbsp;<b>" + i + " </b>- Leader: - Id:" + data[topicName].partitions[i].leader.id + " - Hostname:" + data[topicName].partitions[i].leader.host + ":" + data[topicName].partitions[i].leader.port);
     $('#describe-topic-name').append("<br>");
     $('#describe-topic-name').append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Replicas:");
-    for (var j = 0; j < data[topicName].partitions[i].isr.length; j++) {
-      $('#describe-topic-name').append(data[topicName].partitions[i].replicas[j].id + ",");
+    for (var j = 0; j < data[topicName].partitions[i].replicas.length; j++) {
+      $('#describe-topic-name').append(data[topicName].partitions[i].replicas[j].id);
+      if(j < (data[topicName].partitions[i].replicas.length-1) ) {
+        $('#describe-topic-name').append(",");
+      }
     }
     $('#describe-topic-name').append("<br>");
     $('#describe-topic-name').append("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Isr:");
-    for (var j = 0; j < data[topicName].partitions[i].replicas.length; j++) {
-      $('#describe-topic-name').append(data[topicName].partitions[i].isr[j].id + ",");
+    for (var j = 0; j < data[topicName].partitions[i].isr.length; j++) {
+      $('#describe-topic-name').append(data[topicName].partitions[i].isr[j].id);
+      if(j < (data[topicName].partitions[i].isr.length-1) ) {
+        $('#describe-topic-name').append(",");
+      }
     }
     $('#describe-topic-name').append("<br>");
   }
+}
+
+var handleDescribeLogDir = function(data, textStatus, jqXHR) {
+  var brokerId = $('#describe-broker-id').html();
+    var logArray = data[brokerId];
+    for(o in logArray) {
+      $('#describe-broker-id').html("<b>Log Dir:</b>" + o);
+      $('#describe-broker-id').append("<br>");
+      $('#describe-broker-id').append("<b>Error:</b>" + logArray[o].error);
+      var replicaInfos = logArray[o].replicaInfos;
+      for(t in replicaInfos) {
+        $('#describe-broker-id').append("<br>");
+        $('#describe-broker-id').append("<b>" + t + "<b>");
+        $('#describe-broker-id').append("<br>");
+        $('#describe-broker-id').append("&nbsp;&nbsp;<b>size:</b>" + replicaInfos[t].size);
+        $('#describe-broker-id').append("<br>");
+        $('#describe-broker-id').append("&nbsp;&nbsp;<b>offsetLag:</b>" + replicaInfos[t].offsetLag);
+      }
+    }
 }
 
 var handle404 = function(jqXHR, textStatus, errorThrown) {
@@ -364,8 +394,8 @@ $('#dialog-describe-topic').dialog({
       open: function(event, ui) {
         $(".ui-dialog-titlebar-close", ui.dialog || ui).hide();
       },
-      width: 350,
-      height: 250,
+      width: 400,
+      height: 350,
       open: function() {
             jQuery('.ui-widget-overlay').on('click', function() {
                 jQuery('#dialog-describe-topic').dialog('close');
@@ -385,6 +415,36 @@ $('#dialog-describe-topic').dialog({
         duration: 1000
       }
 });
+
+$('#dialog-describe-logdir').dialog({
+      modal: true,
+      autoOpen: false,
+      closeOnEscape: false,
+      open: function(event, ui) {
+        $(".ui-dialog-titlebar-close", ui.dialog || ui).hide();
+      },
+      width: 400,
+      height: 350,
+      open: function() {
+            jQuery('.ui-widget-overlay').on('click', function() {
+                jQuery('#dialog-describe-logdir').dialog('close');
+            })
+      },
+      buttons: {
+        Ok: function() {
+          $( this ).dialog( "close" );
+        }
+      },
+      show: {
+        effect: "bounce",
+        duration: 1000
+      },
+      hide: {
+        effect: "fade",
+        duration: 1000
+      }
+});
+
 
 $('#dialog-delete-cgroup').dialog({
       modal: true,
@@ -477,6 +537,24 @@ function describeTopic(topicName) {
   return false;
 }
 
+function describeLogDir(brokerId) {
+  $('#dialog-describe-logdir').dialog("open");
+  $('#describe-broker-id').html(brokerId);
+  $.ajax({
+    type: "POST",
+    url: 'http://localhost:8080/api/logs/describe',
+    data: '{"brokers": "' + brokerId + '"}',
+    dataType: "json",
+    statusCode: {
+      200: handleDescribeLogDir,
+      404: handle404,
+      500: handle500
+    }
+  });
+
+  return false;
+}
+
 function deleteCgroup(cgroup) {
   $('#dialog-delete-cgroup').dialog("open");
   $('#delete-cgroup-name').html(cgroup);
@@ -501,7 +579,7 @@ $.ajax({
     var row = "";
       $.each(data, function (index, value) {
         //console.log(value);
-        row += "<tr><td>" + value.id + "</td><td>" + value.host + "</td><td>" + value.port + "</td></tr>";});
+        row += "<tr><td>" + value.id + "</td><td>" + value.host + "</td><td>" + value.port + "</td><td><a href='#' onclick='describeLogDir(\"" + value.id + "\");'>log dir</a></td></tr>";});
 
       $("#brokers-table tbody").append(row);
 
