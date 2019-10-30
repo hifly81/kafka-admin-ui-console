@@ -50,6 +50,10 @@
     <p id="describe-logdir-def"><span id="describe-broker-id"></span></p>
 </div>
 
+<div id="dialog-describe-cgroup" title="Describe Consumer Group">
+    <p id="describe-cgroup-def"><span id="describe-cgroup-name"></span></p>
+</div>
+
 <div id="dialog-delete-topic" title="Delete Topic">
   <p id="delete-topic-def">Are you sure you want to delete the topic: <span id="delete-topic-name"></span></p>
 </div>
@@ -234,7 +238,7 @@ var handleDescribeTopics = function(data, textStatus, jqXHR) {
 }
 
 var handleDescribeLogDir = function(data, textStatus, jqXHR) {
-  var brokerId = $('#describe-broker-id').html();
+    var brokerId = $('#describe-broker-id').html();
     var logArray = data[brokerId];
     for(o in logArray) {
       $('#describe-broker-id').html("<b>Log Dir:</b>" + o);
@@ -250,6 +254,15 @@ var handleDescribeLogDir = function(data, textStatus, jqXHR) {
         $('#describe-broker-id').append("&nbsp;&nbsp;<b>offsetLag:</b>" + replicaInfos[t].offsetLag);
       }
     }
+}
+
+var handleDescribeCgroup = function(data, textStatus, jqXHR) {
+  var cgroup = $('#describe-cgroup-name').html();
+  $('#describe-cgroup-name').html("<b>State:</b>" + data[cgroup].state);
+  $('#describe-cgroup-name').append("<br>");
+  $('#describe-cgroup-name').append("<b>Members:</b>" + data[cgroup].members);
+  $('#describe-cgroup-name').append("<br>");
+  $('#describe-cgroup-name').append("<b>Coordinator:</b>" + data[cgroup].coordinator.id + " - " + data[cgroup].coordinator.host + ":" + data[cgroup].coordinator.port);
 }
 
 var handle404 = function(jqXHR, textStatus, errorThrown) {
@@ -445,6 +458,34 @@ $('#dialog-describe-logdir').dialog({
       }
 });
 
+$('#dialog-describe-cgroup').dialog({
+      modal: true,
+      autoOpen: false,
+      closeOnEscape: false,
+      open: function(event, ui) {
+        $(".ui-dialog-titlebar-close", ui.dialog || ui).hide();
+      },
+      width: 400,
+      height: 350,
+      open: function() {
+            jQuery('.ui-widget-overlay').on('click', function() {
+                jQuery('#dialog-describe-cgroup').dialog('close');
+            })
+      },
+      buttons: {
+        Ok: function() {
+          $( this ).dialog( "close" );
+        }
+      },
+      show: {
+        effect: "bounce",
+        duration: 1000
+      },
+      hide: {
+        effect: "fade",
+        duration: 1000
+      }
+});
 
 $('#dialog-delete-cgroup').dialog({
       modal: true,
@@ -555,6 +596,24 @@ function describeLogDir(brokerId) {
   return false;
 }
 
+function describeCgroup(cgroup) {
+  $('#dialog-describe-cgroup').dialog("open");
+  $('#describe-cgroup-name').html(cgroup);
+  $.ajax({
+    type: "POST",
+    url: 'http://localhost:8080/api/consumergroups/describe',
+    data: '{"groups": "' + cgroup + '"}',
+    dataType: "json",
+    statusCode: {
+      200: handleDescribeCgroup,
+      404: handle404,
+      500: handle500
+    }
+  });
+
+  return false;
+}
+
 function deleteCgroup(cgroup) {
   $('#dialog-delete-cgroup').dialog("open");
   $('#delete-cgroup-name').html(cgroup);
@@ -594,7 +653,7 @@ $.ajax({
     var row = "";
     $.each(data, function (index, value) {
       //console.log(value);
-      row += "<tr><td>" + value.groupId + "</td><td>" + value.simpleConsumerGroup + "</td><td><a href='#' onclick='deleteCgroup(\"" + value.groupId + "\");'>delete</a></td></tr>";});
+      row += "<tr><td>" + value.groupId + "</td><td>" + value.simpleConsumerGroup + "</td><td><a href='#' onclick='describeCgroup(\"" + value.groupId + "\");'>describe</a>&nbsp;<a href='#' onclick='deleteCgroup(\"" + value.groupId + "\");'>delete</a></td></tr>";});
 
     $("#cgroups-table tbody").append(row);
 

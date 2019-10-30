@@ -4,6 +4,8 @@ Kafka Console is a UI for Apache Kafka admin operations.
 
 ## Run Kafka Console UI
 
+Open the index html file, kafka-console-ui/index.html
+
 ![ScreenShot 2](img/screen1.png)
 
 ## Run Kafka Console Server
