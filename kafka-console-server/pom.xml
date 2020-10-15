@@ -14,7 +14,7 @@
         <vertx.version>3.8.0</vertx.version>
         <slf4j-log4j12.version>1.7.18</slf4j-log4j12.version>
         <log4j.version>1.2.17</log4j.version>
-        <junit.version>4.12</junit.version>
+        <junit.version>4.13.1</junit.version>
         <mockito.version>2.7.22</mockito.version>
         <wiremock.version>2.6.0</wiremock.version>
         <!-- TODO upgrade debezium version -->
